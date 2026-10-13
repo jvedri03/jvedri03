@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cuenta común</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0F5; --surface:#FFFFFF; --ink:#18202E; --muted:#5B6578; --line:#D5DBE5;
+  --a:#2B63D9; --a-soft:#DCE6FA; --b:#C23A73; --b-soft:#F7DDE8;
+  --good:#1F7A4D; --bad:#B3261E; --field:#F6F8FB;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121722; --surface:#1B2230; --ink:#E9EDF4; --muted:#9AA4B6; --line:#2C3547;
+    --a:#6C9BFF; --a-soft:#22345A; --b:#F07BAA; --b-soft:#4A2238;
+    --good:#5BC98D; --bad:#FF8A80; --field:#151B27;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121722; --surface:#1B2230; --ink:#E9EDF4; --muted:#9AA4B6; --line:#2C3547;
+  --a:#6C9BFF; --a-soft:#22345A; --b:#F07BAA; --b-soft:#4A2238;
+  --good:#5BC98D; --bad:#FF8A80; --field:#151B27;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5;font-variant-numeric:tabular-nums}
+main{max-width:860px;margin:0 auto;padding:28px 18px 64px}
+h1,h2{font-family:"Bricolage Grotesque",Manrope,system-ui,sans-serif;font-weight:700;letter-spacing:-0.01em;margin:0}
+h1{font-size:clamp(1.9rem,5vw,2.6rem);line-height:1.1}
+h2{font-size:1.3rem;margin-bottom:14px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.status{font-size:.85rem;color:var(--muted)}
+.total{margin-top:22px}
+.total .num{font-family:"Bricolage Grotesque",Manrope,sans-serif;font-size:clamp(2.6rem,9vw,4.2rem);font-weight:700;line-height:1}
+.total .sub{color:var(--muted);margin-top:6px}
+
+/* the pot */
+.pot{margin-top:22px;height:72px;border-radius:14px;overflow:hidden;display:flex;background:var(--line)}
+.pot div{transition:flex-grow .5s ease;display:flex;align-items:center;padding:0 14px;color:#fff;font-weight:700;font-size:1.05rem;min-width:0;white-space:nowrap;overflow:hidden}
+.pot .pa{background:var(--a)} .pot .pb{background:var(--b);justify-content:flex-end}
+@media (prefers-reduced-motion: reduce){.pot div{transition:none}}
+
+.people{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+@media (max-width:620px){.people{grid-template-columns:1fr}}
+.person{background:var(--surface);border-radius:12px;padding:18px;border-top:5px solid var(--pc)}
+.person h3{margin:0 0 10px;font-size:1.1rem;color:var(--pc)}
+.person .big{font-size:1.8rem;font-weight:700;line-height:1.1}
+.person dl{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin:14px 0 0;font-size:.93rem}
+.person dt{color:var(--muted)} .person dd{margin:0;text-align:right;font-weight:600}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+
+section.card{background:var(--surface);border-radius:12px;padding:20px;margin-top:22px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.tabs button{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+label{display:flex;flex-direction:column;gap:5px;font-size:.88rem;color:var(--muted);font-weight:600}
+input,select{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--a);outline-offset:2px}
+.who{display:flex;gap:8px}
+.who button{flex:1;border:2px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;padding:9px;font:inherit;font-weight:700;cursor:pointer}
+.who button[data-p="a"][aria-pressed="true"]{border-color:var(--a);background:var(--a-soft)}
+.who button[data-p="b"][aria-pressed="true"]{border-color:var(--b);background:var(--b-soft)}
+.help{font-size:.88rem;color:var(--muted);margin:12px 0 0}
+.primary{margin-top:16px;border:0;background:var(--ink);color:var(--surface);font:inherit;font-weight:700;padding:12px 20px;border-radius:10px;cursor:pointer}
+.primary:disabled{opacity:.5;cursor:default}
+.msg{margin-top:10px;font-size:.92rem;min-height:1.4em}
+.msg.err{color:var(--bad)} .msg.ok{color:var(--good)}
+
+.hist{list-style:none;margin:0;padding:0}
+.hist li{display:grid;grid-template-columns:92px 1fr auto;gap:12px;padding:12px 0;border-top:1px solid var(--line);align-items:start}
+.hist li:first-child{border-top:0}
+.hist .date{color:var(--muted);font-size:.88rem;padding-top:2px}
+.hist .what{font-weight:600}
+.hist .after{font-size:.86rem;color:var(--muted)}
+.hist .note{font-size:.86rem;color:var(--muted);font-style:italic}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.del{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:.82rem;cursor:pointer}
+.del.confirm{border-color:var(--bad);color:var(--bad)}
+.empty{color:var(--muted)}
+.sched{background:var(--surface);border:1px dashed var(--muted);border-radius:10px;padding:12px 14px;margin-top:16px;font-size:.93rem}
+.months-intro{color:var(--muted);font-size:.92rem;margin:-6px 0 14px;max-width:68ch}
+.tablewrap{overflow-x:auto}
+table.months{width:100%;border-collapse:collapse;font-size:.93rem;min-width:520px}
+table.months th{text-align:right;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.months th:first-child,table.months td:first-child{text-align:left}
+table.months td{text-align:right;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.months tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
+.tag{display:inline-block;font-size:.75rem;font-weight:700;border-radius:999px;padding:1px 8px;margin-left:8px;vertical-align:1px}
+.tag.real{background:var(--a-soft);color:var(--ink)}
+.tag.est{border:1px dashed var(--muted);color:var(--muted)}
+.mini{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--line);width:90px;margin-left:auto}
+.mini span:first-child{background:var(--a)} .mini span:last-child{background:var(--b)}
+details{margin-top:22px;background:var(--surface);border-radius:12px;padding:16px 20px}
+summary{cursor:pointer;font-weight:700}
+details p{color:var(--muted);max-width:68ch}
+.warn{background:var(--b-soft);color:var(--ink);border-radius:10px;padding:12px 14px;margin-top:16px;font-size:.93rem}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <h1>Cuenta común</h1>
+    <div class="status" id="status">Cargando…</div>
+  </div>
+
+  <div class="total">
+    <div class="num" id="total">$0.00</div>
+    <div class="sub" id="totalSub">Saldo estimado a hoy</div>
+  </div>
+
+  <div class="pot" id="pot" role="img" aria-label="Reparto del saldo">
+    <div class="pa" id="potA" style="flex-grow:1"></div>
+    <div class="pb" id="potB" style="flex-grow:1"></div>
+  </div>
+
+  <div id="warnBox"></div>
+
+  <div class="people">
+    <article class="person" style="--pc:var(--a)" id="cardA"></article>
+    <article class="person" style="--pc:var(--b)" id="cardB"></article>
+  </div>
+
+  <section class="card">
+    <h2>Intereses por mes</h2>
+    <p class="months-intro">Se calcula solo, cada mes, con el APY que tengáis apuntado y el dinero que tenía cada uno cada día. No hace falta meter nada. Si algún mes quieres que cuadre al céntimo con Wealthfront, puedes apuntar el dato exacto en "Interés exacto", pero es opcional.</p>
+    <div class="tablewrap"><table class="months" id="months"></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Registrar movimiento</h2>
+    <div class="tabs" role="group" aria-label="Tipo de movimiento">
+      <button type="button" data-t="deposit" aria-pressed="true">Meter dinero</button>
+      <button type="button" data-t="withdraw" aria-pressed="false">Sacar dinero</button>
+      <button type="button" data-t="interest" aria-pressed="false">Interés exacto (opcional)</button>
+      <button type="button" data-t="apy" aria-pressed="false">Cambiar APY</button>
+      <button type="button" data-t="prior" aria-pressed="false">Intereses ya ganados</button>
+      <button type="button" data-t="sync" aria-pressed="false">Ajustar al saldo real</button>
+    </div>
+    <div class="grid">
+      <div id="whoWrap">
+        <div style="font-size:.88rem;color:var(--muted);font-weight:600;margin-bottom:5px">¿De quién?</div>
+        <div class="who" role="group" aria-label="Persona">
+          <button type="button" data-p="a" aria-pressed="true" id="whoA">A</button>
+          <button type="button" data-p="b" aria-pressed="false" id="whoB">B</button>
+        </div>
+      </div>
+      <label><span id="amtLabel">Cantidad ($)</span>
+        <input id="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+      </label>
+      <label id="dateWrap">Fecha
+        <input id="date" type="date">
+      </label>
+      <label id="monthWrap" style="display:none">Mes del interés
+        <input id="month" type="month">
+      </label>
+      <label>Nota (opcional)
+        <input id="note" type="text" maxlength="80" placeholder="Ej. nómina de octubre">
+      </label>
+    </div>
+    <p class="help" id="help"></p>
+    <button class="primary" id="save" type="button">Guardar movimiento</button>
+    <div class="msg" id="msg" role="status"></div>
+  </section>
+
+  <section class="card">
+    <h2>Historial</h2>
+    <ul class="hist" id="hist"></ul>
+  </section>
+
+  <details>
+    <summary>Nombres</summary>
+    <div class="grid" style="margin-top:14px">
+      <label>Persona azul <input id="nameA" maxlength="24"></label>
+      <label>Persona rosa <input id="nameB" maxlength="24"></label>
+    </div>
+    <button class="primary" id="saveNames" type="button">Guardar nombres</button>
+    <div class="msg" id="nameMsg" role="status"></div>
+  </details>
+
+  <details>
+    <summary>Conexión con Google Sheet</summary>
+    <p>Pega la URL de tu aplicación web de Apps Script y la clave. Se guardan solo en este navegador (no en la página pública). Cada uno tiene que hacerlo una vez en su móvil u ordenador.</p>
+    <div class="grid" style="margin-top:14px">
+      <label>URL de Apps Script <input id="sheetUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></label>
+      <label>Clave <input id="sheetKey" type="password" autocomplete="off"></label>
+    </div>
+    <button class="primary" id="connectBtn" type="button">Conectar</button>
+    <button class="del" id="disconnectBtn" type="button" style="margin-left:10px;display:none">Desconectar</button>
+    <div class="msg" id="sheetMsg" role="status"></div>
+  </details>
+
+  <details>
+    <summary>Copia de seguridad (exportar / importar)</summary>
+    <p>Exporta un archivo con todos los movimientos o importa uno. Si estás conectado a Google Sheet, importar sustituye lo que haya en la hoja.</p>
+    <button class="primary" id="exportBtn" type="button">Exportar datos</button>
+    <label style="margin-top:14px">Importar archivo (.json)
+      <input id="importFile" type="file" accept=".json,application/json">
+    </label>
+    <div class="msg" id="bkMsg" role="status"></div>
+  </details>
+
+  <details>
+    <summary>Cómo se calcula</summary>
+    <p>Cada uno tiene su propio saldo dentro de la cuenta. Cada día, el saldo de cada persona crece con el APY vigente ese día (interés compuesto diario, igual que Wealthfront). Así, quien tiene más dinero dentro, y durante más tiempo, gana más intereses, de forma exacta.</p>
+    <p>Cuando alguien mete o saca dinero, solo cambia su saldo. El del otro no se toca. Si el APY cambia, registra el cambio con su fecha y los intereses se calculan con el nuevo tipo desde ese día.</p>
+    <p>Wealthfront calcula el interés cada día pero lo paga una vez al mes. Cuando apuntas el interés real de un mes, se reparte según el dinero que tenía cada uno cada día de ese mes: si tu novia metió dinero el día 20, solo cuenta para ella desde el 20. Ese importe real sustituye a la estimación de ese mes.</p>
+    <p>"Ajustar al saldo real" sirve para cuadrar con lo que ves en la app de Wealthfront: introduces el saldo total real y la diferencia (por redondeos o cambios de APY que no registraste) se reparte en proporción a lo que tiene cada uno.</p>
+  </details>
+</main>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const fmt = new Intl.NumberFormat('es-US',{style:'currency',currency:'USD'});
+  const money = n => fmt.format(Math.abs(n) < 0.005 ? 0 : n);
+  const signed = n => (n >= 0.005 ? '+' : n <= -0.005 ? '−' : '') + fmt.format(Math.abs(n) < 0.005 ? 0 : Math.abs(n));
+  const pct = n => (Math.round(n*10)/10).toLocaleString('es-ES') + ' %';
+  const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+  const toUTC = s => { const [y,m,d]=s.split('-').map(Number); return Date.UTC(y,m-1,d); };
+  const days = (a,b) => (toUTC(b)-toUTC(a))/86400000;
+  const niceDate = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'}); };
+
+  const state = { events: [], names: {a:'Persona 1', b:'Persona 2'}, type:'deposit', who:'a', ready:false };
+  let store = null;
+  let onRendered = null;
+
+  // ---------- core calculation ----------
+  function sortEvents(evs){
+    return [...evs].sort((x,y)=> x.date<y.date?-1 : x.date>y.date?1 : (x.createdAt||0)-(y.createdAt||0));
+  }
+  const addDay = s => new Date(toUTC(s)+86400000).toISOString().slice(0,10);
+  const nextMonthFirst = m => { let [y,mo]=m.split('-').map(Number); mo++; if(mo>12){mo=1;y++;} return y+'-'+String(mo).padStart(2,'0')+'-01'; };
+  const monthName = m => { const [y,mo]=m.split('-').map(Number); const s=new Date(y,mo-1,1).toLocaleDateString('es-ES',{month:'long',year:'numeric'}); return s.charAt(0).toUpperCase()+s.slice(1); };
+  const prevMonth = () => { const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); };
+
+  function simulate(evs, until){
+    const bal={a:0,b:0}, contrib={a:0,b:0}, interest={a:0,b:0}, prior={a:0,b:0};
+    let apy=0, cur=null, apySet=false;
+    const rows=[], months={};
+    const M = m => months[m] || (months[m]={est:{a:0,b:0}, w:{a:0,b:0}, bd:{a:0,b:0}, actual:null});
+    // day-by-day accrual so each day's interest lands in its own month
+    const grow = to => {
+      if(!cur){ cur=to; return; }
+      while(cur<to){
+        const m=M(cur.slice(0,7));
+        const r=apy>0 ? Math.pow(1+apy/100,1/365)-1 : 0;
+        for(const p of ['a','b']){
+          const g=bal[p]*r;
+          m.est[p]+=g; m.w[p]+=g; m.bd[p]+=Math.max(bal[p],0);
+          bal[p]+=g; interest[p]+=g;
+        }
+        cur=addDay(cur);
+      }
+    };
+    for(const ev of sortEvents(evs)){
+      if(until && ev.date>until){ rows.push({ev, delta:{a:0,b:0}, problem:null, scheduled:true}); continue; }
+      grow(ev.date);
+      const row={ev, delta:{a:0,b:0}, problem:null};
+      if(ev.type==='interest'){
+        const m=M(ev.month);
+        const wt=m.w.a+m.w.b, bt=m.bd.a+m.bd.b, tot=bal.a+bal.b;
+        if(m.actual) row.problem='Ya había un interés apuntado para este mes; este se ha ignorado.';
+        else if(wt<=0 && bt<=0 && tot<=0) row.problem='No había dinero en la cuenta ese mes.';
+        else {
+          const sa = wt>0 ? m.w.a/wt : bt>0 ? m.bd.a/bt : bal.a/tot;
+          const act={a:ev.amount*sa, b:ev.amount*(1-sa)};
+          for(const p of ['a','b']){ const diff=act[p]-m.est[p]; bal[p]+=diff; interest[p]+=diff; row.delta[p]=act[p]; }
+          m.actual={total:ev.amount, a:act.a, b:act.b};
+        }
+        row.after={a:bal.a,b:bal.b};
+        rows.push(row);
+        continue;
+      }
+      if(ev.type==='deposit'){ bal[ev.person]+=ev.amount; contrib[ev.person]+=ev.amount; }
+      else if(ev.type==='withdraw'){
+        if(ev.amount > bal[ev.person]+0.005) row.problem='Saca más de lo que tenía en ese momento ('+money(bal[ev.person])+').';
+        bal[ev.person]-=ev.amount; contrib[ev.person]-=ev.amount;
+      }
+      else if(ev.type==='prior'){ bal[ev.person]+=ev.amount; interest[ev.person]+=ev.amount; prior[ev.person]+=ev.amount; }
+      else if(ev.type==='apy'){ row.prevApy=apySet?apy:null; apy=ev.amount; apySet=true; }
+      else if(ev.type==='sync'){
+        const tot=bal.a+bal.b;
+        if(tot>0){
+          const r=ev.amount/tot;
+          for(const p of ['a','b']){ const diff=bal[p]*(r-1); bal[p]+=diff; interest[p]+=diff; row.delta[p]=diff; }
+        } else row.problem='No había saldo que ajustar.';
+      }
+      row.after={a:bal.a,b:bal.b};
+      rows.push(row);
+    }
+    if(until) grow(until);
+    return {bal, contrib, interest, prior, apy, apySet, rows, months};
+  }
+
+  // ---------- rendering ----------
+  function personCard(p, r){
+    const total=r.bal.a+r.bal.b;
+    const share= total>0 ? r.bal[p]/total*100 : 0;
+    const monthly = r.bal[p]*(Math.pow(1+r.apy/100,1/12)-1);
+    const yearly = r.bal[p]*(r.apy/100);
+    const i=r.interest[p], inew=i-r.prior[p];
+    const mv = k => { const m=r.months[k]; return !m ? 0 : m.actual ? m.actual[p] : m.est[p]; };
+    const mNow=mv(today().slice(0,7)), mPrev=mv(prevMonth());
+    return `<h3>${esc(state.names[p])}</h3>
+      <div class="big">${money(r.bal[p])}</div>
+      <dl>
+        <dt>Parte del total</dt><dd>${pct(share)}</dd>
+        <dt>Aportado (metido − sacado)</dt><dd>${money(r.contrib[p])}</dd>
+        ${r.prior[p]>0 ? `<dt>Intereses de antes</dt><dd>${money(r.prior[p])}</dd>` : ''}
+        <dt>Intereses nuevos (cuenta común)</dt><dd class="${inew>=0.005?'pos':inew<=-0.005?'neg':''}">${signed(inew)}</dd>
+        ${r.prior[p]>0 ? `<dt>Intereses en total</dt><dd>${money(i)}</dd>` : ''}
+        <dt>Interés del mes pasado</dt><dd>${money(mPrev)}</dd>
+        <dt>Interés este mes (hasta hoy)</dt><dd>${money(mNow)}</dd>
+        <dt>Al mes, con el APY actual</dt><dd>≈ ${money(monthly)}</dd>
+        <dt>Al año, con el APY actual</dt><dd>≈ ${money(yearly)}</dd>
+      </dl>`;
+  }
+  function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function describe(ev){
+    const n=state.names;
+    if(ev.type==='deposit') return `<span class="dot" style="background:var(--${ev.person})"></span>${esc(n[ev.person])} mete ${money(ev.amount)}`;
+    if(ev.type==='withdraw') return `<span class="dot" style="background:var(--${ev.person})"></span>${esc(n[ev.person])} saca ${money(ev.amount)}`;
+    if(ev.type==='prior') return `<span class="dot" style="background:var(--${ev.person})"></span>Intereses que ${esc(n[ev.person])} ya había ganado: ${money(ev.amount)}`;
+    if(ev.type==='apy') return `APY pasa a ${ev.amount.toLocaleString('es-ES',{maximumFractionDigits:3})} %`;
+    if(ev.type==='sync') return `Ajuste al saldo real: ${money(ev.amount)}`;
+    if(ev.type==='interest') return `Interés de ${monthName(ev.month).toLowerCase()}: ${money(ev.amount)}`;
+    return '';
+  }
+
+  function renderMonths(r){
+    const t=$('months');
+    const nowM=today().slice(0,7);
+    const keys=Object.keys(r.months).filter(k=>k<=nowM).sort().reverse();
+    if(!keys.length){ t.innerHTML=`<tbody><tr><td class="empty" style="text-align:left">Aparecerán aquí en cuanto haya dinero en la cuenta.</td></tr></tbody>`; return; }
+    const n=state.names;
+    let sum={t:0,a:0,b:0};
+    const rows=keys.map(k=>{
+      const m=r.months[k];
+      const v = m.actual ? m.actual : {a:m.est.a, b:m.est.b, total:m.est.a+m.est.b};
+      sum.t+=v.total; sum.a+=v.a; sum.b+=v.b;
+      const tag = m.actual ? '<span class="tag real">Recibido</span>'
+        : k===nowM ? '<span class="tag est">En curso</span>' : '<span class="tag est">Calculado</span>';
+      const sa = v.total>0 ? v.a/v.total*100 : 50;
+      return `<tr><td>${monthName(k)}${tag}</td><td>${money(v.total)}</td><td>${money(v.a)}</td><td>${money(v.b)}</td>
+        <td><div class="mini" title="${esc(n.a)} ${pct(sa)}, ${esc(n.b)} ${pct(100-sa)}"><span style="width:${sa}%"></span><span style="width:${100-sa}%"></span></div></td></tr>`;
+    }).join('');
+    t.innerHTML=`<thead><tr><th>Mes</th><th>Total</th><th style="color:var(--a)">${esc(n.a)}</th><th style="color:var(--b)">${esc(n.b)}</th><th>Reparto</th></tr></thead>
+      <tbody>${rows}</tbody>
+      ${(r.prior.a+r.prior.b)>0 ? `<tbody><tr><td>Intereses de antes<span class="tag real">Previos</span></td><td>${money(r.prior.a+r.prior.b)}</td><td>${money(r.prior.a)}</td><td>${money(r.prior.b)}</td><td></td></tr></tbody>` : ''}
+      <tfoot><tr><td>Total nuevo</td><td>${money(sum.t)}</td><td>${money(sum.a)}</td><td>${money(sum.b)}</td><td></td></tr></tfoot>`;
+  }
+
+  const pendingDelete = new Set();
+  function render(){
+    const r = simulate(state.events, today());
+    const total=r.bal.a+r.bal.b;
+    $('total').textContent = money(total);
+    $('totalSub').textContent = r.apySet
+      ? `Saldo estimado a hoy, con un APY de ${r.apy.toLocaleString('es-ES',{maximumFractionDigits:3})} %`
+      : 'Saldo estimado a hoy';
+    const sa = total>0 ? r.bal.a/total : 0.5, sb = total>0 ? r.bal.b/total : 0.5;
+    $('potA').style.flexGrow = Math.max(sa,0.0001);
+    $('potB').style.flexGrow = Math.max(sb,0.0001);
+    $('potA').textContent = total>0 && sa>0.12 ? `${state.names.a} ${pct(sa*100)}` : '';
+    $('potB').textContent = total>0 && sb>0.12 ? `${state.names.b} ${pct(sb*100)}` : '';
+    $('pot').setAttribute('aria-label', `${state.names.a} ${pct(sa*100)}, ${state.names.b} ${pct(sb*100)}`);
+    $('cardA').innerHTML = personCard('a', r);
+    $('cardB').innerHTML = personCard('b', r);
+    $('whoA').textContent = state.names.a;
+    $('whoB').textContent = state.names.b;
+
+    let warn='';
+    if(state.ready && state.events.length===0) warn='Para empezar: registra el APY actual (en "Cambiar APY") y luego lo que mete cada uno, con la fecha en que entró el dinero.';
+    else if(state.ready && !r.apySet) warn='Todavía no hay ningún APY registrado, así que no se calculan intereses. Añádelo en "Cambiar APY".';
+    else {
+      const prob=r.rows.find(x=>x.problem && x.ev.type==='withdraw');
+      if(prob) warn=`Hay una retirada del ${niceDate(prob.ev.date)} que deja a ${esc(state.names[prob.ev.person])} en negativo. Revisa el historial.`;
+    }
+    const sched=r.rows.filter(x=>x.scheduled);
+    const schedHtml = sched.length ? `<div class="sched"><strong>Programado:</strong> ${sched.map(x=>`${describe(x.ev)} el ${niceDate(x.ev.date)}`).join('; ')}</div>` : '';
+    $('warnBox').innerHTML = (warn ? `<div class="warn">${warn}</div>` : '') + schedHtml;
+    renderMonths(r);
+    if(onRendered) onRendered(r);
+
+    const list = $('hist');
+    if(!state.events.length){ list.innerHTML = `<li class="empty" style="display:block">${state.ready?'Aún no hay movimientos.':'Cargando…'}</li>`; return; }
+    list.innerHTML = r.rows.slice().reverse().map(row=>{
+      const ev=row.ev;
+      let after='';
+      if(row.scheduled){
+        const conf=pendingDelete.has(ev.id);
+        return `<li>
+          <div class="date">${niceDate(ev.date)}</div>
+          <div><div class="what">${describe(ev)}<span class="tag est">Programado</span></div>
+            <div class="after">Se aplicará automáticamente el ${niceDate(ev.date)}. Hasta entonces no cuenta en los saldos.</div>
+            ${ev.note?`<div class="note">${esc(ev.note)}</div>`:''}
+          </div>
+          <button class="del ${conf?'confirm':''}" data-id="${esc(ev.id)}" type="button">${conf?'¿Seguro?':'Borrar'}</button>
+        </li>`;
+      }
+      if(ev.type==='sync') after=`${esc(state.names.a)} ${signed(row.delta.a)}, ${esc(state.names.b)} ${signed(row.delta.b)}`;
+      else if(ev.type==='interest') after = row.problem ? '' : `Para ${esc(state.names.a)} ${money(row.delta.a)}, para ${esc(state.names.b)} ${money(row.delta.b)}`;
+      else if(ev.type!=='apy') after=`Después: ${esc(state.names.a)} ${money(row.after.a)}, ${esc(state.names.b)} ${money(row.after.b)}`;
+      const conf=pendingDelete.has(ev.id);
+      return `<li>
+        <div class="date">${niceDate(ev.date)}</div>
+        <div><div class="what">${describe(ev)}</div>
+          ${after?`<div class="after">${after}</div>`:''}
+          ${ev.note?`<div class="note">${esc(ev.note)}</div>`:''}
+          ${row.problem?`<div class="after neg">${row.problem}</div>`:''}
+        </div>
+        <button class="del ${conf?'confirm':''}" data-id="${esc(ev.id)}" type="button">${conf?'¿Seguro?':'Borrar'}</button>
+      </li>`;
+    }).join('');
+  }
+
+  // ---------- form ----------
+  const HELP = {
+    deposit:'El dinero que entra en la cuenta. Usa la fecha en que llegó a Wealthfront para que los intereses cuenten desde ese día.',
+    withdraw:'El dinero que sale. Se descuenta solo del saldo de esa persona.',
+    interest:'Opcional. Solo si quieres que un mes cuadre al céntimo: copia el interés que Wealthfront muestra para ese mes. Se reparte según el dinero que tenía cada uno cada día de ese mes, y sustituye a la estimación.',
+    prior:'Intereses que alguien ya había ganado antes de empezar a usar esta página. Cuentan como suyos y como intereses, no como dinero aportado.',
+    apy:'Cuando Wealthfront cambie el tipo, apunta el nuevo APY (en %) y la fecha. Ej. 3.75',
+    sync:'Escribe el saldo total que ves ahora en Wealthfront. La diferencia con el cálculo se reparte según lo que tiene cada uno.'
+  };
+  function setType(t){
+    state.type=t;
+    document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.t===t)));
+    $('whoWrap').style.display = (t==='deposit'||t==='withdraw'||t==='prior') ? '' : 'none';
+    $('dateWrap').style.display = t==='interest' ? 'none' : '';
+    $('monthWrap').style.display = t==='interest' ? '' : 'none';
+    $('amtLabel').textContent = t==='apy' ? 'APY (%)' : t==='sync' ? 'Saldo total real ($)' : t==='interest' ? 'Interés total recibido ($)' : 'Cantidad ($)';
+    $('amount').step = t==='apy' ? '0.001' : '0.01';
+    $('help').textContent = HELP[t];
+    $('msg').textContent=''; $('msg').className='msg';
+  }
+  function setWho(p){
+    state.who=p;
+    document.querySelectorAll('.who button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.p===p)));
+  }
+  document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>setType(b.dataset.t)));
+  document.querySelectorAll('.who button').forEach(b=>b.addEventListener('click',()=>setWho(b.dataset.p)));
+  $('date').value = today();
+  $('month').value = prevMonth();
+  $('month').max = prevMonth();
+  setType('deposit');
+
+  function showMsg(el, text, ok){ el.textContent=text; el.className='msg '+(ok?'ok':'err'); }
+
+  $('save').addEventListener('click', async ()=>{
+    const msg=$('msg');
+    const amount = parseFloat(String($('amount').value).replace(',','.'));
+    const isInt = state.type==='interest';
+    const month = $('month').value;
+    if(isInt){
+      if(!/^\d{4}-\d{2}$/.test(month)) return showMsg(msg,'Elige el mes del interés.');
+      if(month >= today().slice(0,7)) return showMsg(msg,'Ese mes aún no ha terminado. Apunta el interés cuando Wealthfront lo pague.');
+      if(state.events.some(e=>e.type==='interest' && e.month===month)) return showMsg(msg,`Ya hay un interés apuntado para ${monthName(month).toLowerCase()}. Bórralo en el historial si quieres corregirlo.`);
+    }
+    const date = isInt ? nextMonthFirst(month) : $('date').value;
+    if(!date){ return showMsg(msg,'Elige una fecha.'); }
+    if(!(amount>=0) || (state.type!=='apy' && !(amount>0))){ return showMsg(msg,'Escribe una cantidad mayor que 0.'); }
+    if(state.type==='apy' && amount>25){ return showMsg(msg,'Ese APY parece demasiado alto. Escríbelo en %, por ejemplo 3.75.'); }
+    const ev = { type:state.type, amount: Math.round(amount*1000)/1000, date, note:$('note').value.trim().slice(0,80), createdAt:Date.now() };
+    if(state.type==='deposit'||state.type==='withdraw'||state.type==='prior') ev.person=state.who;
+    if(isInt) ev.month=month;
+    if(state.type==='withdraw'){
+      const sim = simulate(state.events.filter(e=>e.date<=date), date);
+      if(ev.amount > sim.bal[state.who]+0.005) return showMsg(msg, `${state.names[state.who]} solo tenía ${money(sim.bal[state.who])} el ${niceDate(date)}.`);
+    }
+    if(state.type==='sync'){
+      const sim = simulate(state.events.filter(e=>e.date<=date), date);
+      if(sim.bal.a+sim.bal.b<=0) return showMsg(msg,'Primero registra lo que ha metido cada uno.');
+    }
+    $('save').disabled=true;
+    try{
+      await store.add(ev);
+      $('amount').value=''; $('note').value='';
+      showMsg(msg, ev.date>today() ? `Programado: se aplicará automáticamente el ${niceDate(ev.date)}.` : 'Movimiento guardado.', true);
+    }catch(e){
+      showMsg(msg, 'No se ha podido guardar. Revisa la conexión e inténtalo de nuevo.');
+    }finally{ $('save').disabled=false; }
+  });
+
+  $('hist').addEventListener('click', async e=>{
+    const btn=e.target.closest('.del'); if(!btn) return;
+    const id=btn.dataset.id;
+    if(!pendingDelete.has(id)){ pendingDelete.add(id); render(); setTimeout(()=>{ if(pendingDelete.delete(id)) render(); },4000); return; }
+    pendingDelete.delete(id);
+    try{ await store.remove(id); }catch(err){ showMsg($('msg'),'No se ha podido borrar.'); render(); }
+  });
+
+  $('saveNames').addEventListener('click', async ()=>{
+    const names={ a: $('nameA').value.trim()||'Persona 1', b: $('nameB').value.trim()||'Persona 2' };
+    try{ await store.setNames(names); showMsg($('nameMsg'),'Nombres guardados.',true); }
+    catch(e){ showMsg($('nameMsg'),'No se han podido guardar los nombres.'); }
+  });
+
+  function applyNames(n){
+    if(n && typeof n.a==='string') state.names.a=n.a;
+    if(n && typeof n.b==='string') state.names.b=n.b;
+    if(document.activeElement!==$('nameA')) $('nameA').value=state.names.a;
+    if(document.activeElement!==$('nameB')) $('nameB').value=state.names.b;
+  }
+  function cleanEvent(id, d){
+    if(!d) return null;
+    const types=['deposit','withdraw','apy','sync','interest','prior'];
+    if(!types.includes(d.type) || typeof d.amount!=='number' || typeof d.date!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(d.date)) return null;
+    if((d.type==='deposit'||d.type==='withdraw'||d.type==='prior') && !['a','b'].includes(d.person)) return null;
+    if(d.type==='interest' && !(typeof d.month==='string' && /^\d{4}-\d{2}$/.test(d.month))) return null;
+    return { id, type:d.type, amount:d.amount, date:d.date, person:d.person, month:d.month, note: typeof d.note==='string'?d.note:'', createdAt: typeof d.createdAt==='number'?d.createdAt:0 };
+  }
+
+  // ---------- storage ----------
+  const LKEY='cuenta-comun-v1', CKEY='cuenta-comun-sheet';
+  const lread=()=>{ try{ return JSON.parse(localStorage.getItem(LKEY))||{events:[],names:null}; }catch(e){ return {events:[],names:null}; } };
+  const lwrite=d=>{ try{ localStorage.setItem(LKEY, JSON.stringify(d)); }catch(e){} };
+  const newId=()=>'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  const loadData=d=>{ state.events=(d.events||[]).map(e=>cleanEvent(e.id,e)).filter(Boolean); applyNames(d.names); state.ready=true; render(); };
+
+  function localStore(){
+    loadData(lread());
+    $('status').textContent='Guardado solo en este navegador';
+    return {
+      mode:'local',
+      add: async ev=>{ const d=lread(); d.events=d.events||[]; d.events.push({...ev,id:newId()}); lwrite(d); loadData(d); },
+      remove: async id=>{ const d=lread(); d.events=(d.events||[]).filter(e=>e.id!==id); lwrite(d); loadData(d); },
+      setNames: async n=>{ const d=lread(); d.names=n; lwrite(d); loadData(d); },
+      replace: async d=>{ lwrite(d); loadData(d); },
+      stop(){}
+    };
+  }
+
+  function sheetStore(cfg){
+    let timer=null, lastSummary='', summaryTimer=null;
+    const stamp=()=>new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    const ok=d=>{ lwrite({events:d.events,names:d.names}); loadData(d); $('status').textContent='Sincronizado con Google Sheet ('+stamp()+')'; };
+    const fail=()=>{ $('status').textContent='Sin conexión con Google Sheet: mostrando la última copia guardada'; };
+    async function call(body){
+      let res;
+      if(body){ res=await fetch(cfg.url,{method:'POST',body:JSON.stringify({...body,key:cfg.key})}); }
+      else { res=await fetch(cfg.url+(cfg.url.includes('?')?'&':'?')+'key='+encodeURIComponent(cfg.key)); }
+      const d=await res.json();
+      if(!d.ok) throw new Error(d.error||'error');
+      return d;
+    }
+    async function refresh(){ try{ ok(await call(null)); }catch(e){ fail(); throw e; } }
+    loadData(lread());
+    $('status').textContent='Conectando con Google Sheet…';
+    refresh().catch(()=>{});
+    timer=setInterval(()=>{ if(!document.hidden) refresh().catch(()=>{}); },30000);
+    const onVis=()=>{ if(!document.hidden) refresh().catch(()=>{}); };
+    document.addEventListener('visibilitychange',onVis);
+
+    onRendered = r => {
+      if(!state.ready) return;
+      const n=state.names, nowM=today().slice(0,7);
+      const saldos=['a','b'].map(p=>{ const tot=r.bal.a+r.bal.b; return [n[p], +r.bal[p].toFixed(2), +r.contrib[p].toFixed(2), +r.prior[p].toFixed(2), +(r.interest[p]-r.prior[p]).toFixed(2), tot>0? +(r.bal[p]/tot*100).toFixed(2):0]; });
+      const meses=Object.keys(r.months).filter(k=>k<=nowM).sort().reverse().map(k=>{ const m=r.months[k]; const v=m.actual?m.actual:{a:m.est.a,b:m.est.b,total:m.est.a+m.est.b}; return [k, +v.total.toFixed(2), +v.a.toFixed(2), +v.b.toFixed(2), m.actual?'Recibido':k===nowM?'En curso':'Calculado']; });
+      const summary={actualizado:today(), apy:r.apy, saldos, meses};
+      const sig=JSON.stringify(summary);
+      if(sig===lastSummary) return;
+      clearTimeout(summaryTimer);
+      summaryTimer=setTimeout(()=>{ call({action:'summary',summary}).then(()=>{ lastSummary=sig; }).catch(()=>{}); },2000);
+    };
+
+    return {
+      mode:'sheet',
+      add: async ev=>ok(await call({action:'add',event:{...ev,id:newId()}})),
+      remove: async id=>ok(await call({action:'remove',id})),
+      setNames: async names=>ok(await call({action:'names',names})),
+      replace: async d=>ok(await call({action:'replace',events:d.events,names:d.names})),
+      test: refresh,
+      stop(){ clearInterval(timer); document.removeEventListener('visibilitychange',onVis); onRendered=null; }
+    };
+  }
+
+  function readCfg(){ try{ const c=JSON.parse(localStorage.getItem(CKEY)); return c&&c.url&&c.key?c:null; }catch(e){ return null; } }
+  function startStore(){
+    if(store&&store.stop) store.stop();
+    const cfg=readCfg();
+    store = cfg ? sheetStore(cfg) : localStore();
+    $('sheetUrl').value=cfg?cfg.url:''; $('sheetKey').value=cfg?cfg.key:'';
+    $('disconnectBtn').style.display=cfg?'':'none';
+  }
+
+  $('connectBtn').addEventListener('click', async ()=>{
+    const url=$('sheetUrl').value.trim(), key=$('sheetKey').value.trim();
+    if(!/^https:\/\/script\.google\.com\/.+\/exec/.test(url)) return showMsg($('sheetMsg'),'La URL debe ser la de la aplicación web de Apps Script y terminar en /exec.');
+    if(!key) return showMsg($('sheetMsg'),'Escribe la clave.');
+    const hadLocal=lread().events.length;
+    try{ localStorage.setItem(CKEY, JSON.stringify({url,key})); }catch(e){}
+    startStore();
+    try{
+      await store.test();
+      showMsg($('sheetMsg'),'Conectado. Todo se guarda ahora en tu Google Sheet.',true);
+      if(hadLocal && state.events.length===0) showMsg($('sheetMsg'),'Conectado. La hoja está vacía: usa "Importar archivo" para subir vuestros movimientos.',true);
+    }catch(e){
+      showMsg($('sheetMsg'), e.message==='clave' ? 'La clave no es correcta.' : 'No se ha podido conectar. Revisa la URL y que la aplicación web tenga acceso "Cualquier usuario".');
+    }
+  });
+  $('disconnectBtn').addEventListener('click',()=>{ try{ localStorage.removeItem(CKEY); }catch(e){} startStore(); showMsg($('sheetMsg'),'Desconectado. Los datos se guardan solo en este navegador.',true); });
+
+  $('exportBtn').addEventListener('click',()=>{
+    const data={events:state.events, names:state.names};
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cuenta-comun-'+today()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    showMsg($('bkMsg'),'Archivo descargado.',true);
+  });
+  $('importFile').addEventListener('change',async e=>{
+    const f=e.target.files[0]; if(!f) return;
+    try{
+      const d=JSON.parse(await f.text());
+      if(!Array.isArray(d.events)) throw new Error('formato');
+      const events=d.events.map(x=>cleanEvent(x.id||newId(),x)).filter(Boolean);
+      await store.replace({events, names:d.names||state.names});
+      showMsg($('bkMsg'),`Importados ${events.length} movimientos${store.mode==='sheet'?' en Google Sheet':''}.`,true);
+    }catch(err){ showMsg($('bkMsg'), err.message==='formato'?'Ese archivo no es válido.':'No se ha podido importar.'); }
+    e.target.value='';
+  });
+
+  applyNames(state.names);
+  render();
+  startStore();
+
+  // refresh the "a hoy" figures if the page stays open past midnight
+  setInterval(()=>{ if(state.ready) render(); }, 60*60*1000);
+})();
+</script>
+</body>
+</html>
