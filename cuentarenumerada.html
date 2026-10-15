@@ -553,7 +553,19 @@ details p{color:var(--muted);max-width:68ch}
       if(!d.ok) throw new Error(d.error||'error');
       return d;
     }
-    async function refresh(){ try{ ok(await call(null)); }catch(e){ fail(); throw e; } }
+    let seeding=false;
+    async function refresh(){
+      try{
+        const d=await call(null);
+        const sinNombres=!d.names || ((d.names.a||'Persona 1')==='Persona 1' && (d.names.b||'Persona 2')==='Persona 2');
+        if(!seeding && (!d.events||!d.events.length) && sinNombres){
+          seeding=true;
+          ok(await call({action:'replace', events:SEED.events, names:SEED.names}));
+          return;
+        }
+        ok(d);
+      }catch(e){ fail(); throw e; }
+    }
     loadData(lread());
     $('status').textContent='Conectando con Google Sheet…';
     refresh().catch(()=>{});
@@ -584,7 +596,25 @@ details p{color:var(--muted);max-width:68ch}
     };
   }
 
-  function readCfg(){ try{ const c=JSON.parse(localStorage.getItem(CKEY)); return c&&c.url&&c.key?c:null; }catch(e){ return null; } }
+  // URL fija de Apps Script. La clave NO va aquí: llega en el enlace (#k=...) y se guarda en el navegador.
+  const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwjsBadlAMGdxBgzqbJvxstBq6GwZZox7bxBnelw6spYrtK38BVUsjSmt0FOkakSXEA/exec';
+  // Datos iniciales: se cargan solos en la hoja si está vacía y sin nombres puestos.
+  const SEED={
+    names:{a:'Jacobo', b:'Alejandra'},
+    events:[
+      {id:'jl734gjigmzia3d508jq', type:'apy', amount:4.3, date:'2026-10-01', note:'', createdAt:1790903715195},
+      {id:'o3t5b2cqbi5awong090z', type:'deposit', person:'a', amount:22707.85, date:'2026-10-01', note:'Saldo inicial sin los intereses previos', createdAt:1790903813715},
+      {id:'intereses-previos-jacobo', type:'prior', person:'a', amount:239, date:'2026-10-01', note:'Intereses ganados antes de abrir la cuenta común', createdAt:1790903813716},
+      {id:'cdyvfcsp07jr6khxzvlt', type:'deposit', person:'b', amount:13500, date:'2026-10-05', note:'', createdAt:1790909023546},
+      {id:'b5zq1u58cuy8w6zu10lp', type:'deposit', person:'a', amount:3650, date:'2026-10-13', note:'', createdAt:1791497432545}
+    ]
+  };
+  function hashKey(){ try{ const h=new URLSearchParams(location.hash.slice(1)); return (h.get('k')||h.get('clave')||'').trim(); }catch(e){ return ''; } }
+  function readCfg(){
+    const k=hashKey();
+    if(k){ const c={url:DEFAULT_URL,key:k}; try{ localStorage.setItem(CKEY, JSON.stringify(c)); }catch(e){} return c; }
+    try{ const c=JSON.parse(localStorage.getItem(CKEY)); return c&&c.url&&c.key?c:null; }catch(e){ return null; }
+  }
   function startStore(){
     if(store&&store.stop) store.stop();
     const cfg=readCfg();
@@ -608,7 +638,7 @@ details p{color:var(--muted);max-width:68ch}
       showMsg($('sheetMsg'), e.message==='clave' ? 'La clave no es correcta.' : 'No se ha podido conectar. Revisa la URL y que la aplicación web tenga acceso "Cualquier usuario".');
     }
   });
-  $('disconnectBtn').addEventListener('click',()=>{ try{ localStorage.removeItem(CKEY); }catch(e){} startStore(); showMsg($('sheetMsg'),'Desconectado. Los datos se guardan solo en este navegador.',true); });
+  $('disconnectBtn').addEventListener('click',()=>{ try{ localStorage.removeItem(CKEY); }catch(e){} try{ history.replaceState(null,'',location.pathname); }catch(e){} startStore(); showMsg($('sheetMsg'),'Desconectado. Los datos se guardan solo en este navegador.',true); });
 
   $('exportBtn').addEventListener('click',()=>{
     const data={events:state.events, names:state.names};
